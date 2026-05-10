@@ -362,9 +362,7 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
   const TILE_SIZE = 100;
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[url('[https://www.transparenttextures.com/patterns/wood-pattern.png](https://www.transparenttextures.com/patterns/wood-pattern.png)')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
-      <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
-
+    <div className="relative w-full h-screen overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">      <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
       {currentPhase === 'game_over' && showGameOverModal && (
          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="bg-white max-w-md w-full rounded-[2rem] border-4 border-stone-800 shadow-2xl overflow-hidden animate-[bounce_0.5s_ease-out]">

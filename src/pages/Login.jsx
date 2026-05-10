@@ -34,8 +34,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-stone-200 bg-[url('[https://www.transparenttextures.com/patterns/cream-paper.png](https://www.transparenttextures.com/patterns/cream-paper.png)')]">
-      <div className="max-w-md w-full bg-white p-8 rounded-[2rem] shadow-2xl border-2 border-stone-200">
+    <div className="flex items-center justify-center min-h-screen p-4 bg-stone-200 bg-[url('[https:/www.transparenttextures.com/patterns/cream-paper.png](https:/www.transparenttextures.com/patterns/cream-paper.png)')]">      <div className="max-w-md w-full bg-white p-8 rounded-[2rem] shadow-2xl border-2 border-stone-200">
         <div className="flex justify-center mb-6"><Gamepad2 size={64} className="text-blue-600" /></div>
         <h1 className="text-4xl font-black text-center mb-2">桌遊聚會所</h1>
         <p className="text-center text-stone-500 font-bold mb-8">{isLoginMode ? '登入您的帳號' : '註冊新玩家'}</p>
