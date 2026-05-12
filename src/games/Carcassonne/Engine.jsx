@@ -15,9 +15,8 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
   const [pendingPlacement, setPendingPlacement] = useState(null); 
   const [activeMeepleType, setActiveMeepleType] = useState('normal'); 
   const [showGameOverModal, setShowGameOverModal] = useState(true);
-  const [showRulesModal, setShowRulesModal] = useState(false); // ★ 新增規則視窗狀態
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
-  // 房主控制狀態
   const [showHostMenu, setShowHostMenu] = useState(false);
   const [confirmModal, setConfirmModal] = useState(null); 
 
@@ -313,11 +312,10 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
     };
 
     return (
-      // ★ 修正 1：使用 h-[100dvh] 來動態適應手機瀏覽器工具列
       <div className="relative w-full h-[100dvh] overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
       <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
 
-      {/* ★ 新增：規則說明彈出視窗 */}
+      {/* 規則說明彈出視窗 */}
       {showRulesModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
           <div className="bg-white max-w-xl w-full h-[80vh] md:h-auto md:max-h-[85vh] rounded-[2rem] shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden">
@@ -435,7 +433,6 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
         
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
           <div className="flex gap-2 h-[52px]">
-             {/* ★ 新增：規則按鈕 */}
              <button onClick={() => setShowRulesModal(true)} className="interactive-btn px-3 h-full bg-blue-100 text-blue-700 rounded-xl shadow-md border-2 border-blue-200 hover:bg-blue-200 transition-colors flex items-center justify-center" title="規則說明">
                <BookOpen size={22} />
              </button>
@@ -543,7 +540,6 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
 
       {isMyTurn && currentPhase !== 'game_over' && (
         <>
-          {/* ★ 修正 2：增加底部按鈕的間距 (bottom-10) 與 SafeArea 支援 */}
           {currentPhase === 'place_tile' && currentDrawnTile && (
             <div className="game-ui absolute bottom-10 md:bottom-6 left-4 z-10 flex flex-col gap-3" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
               <div className={`relative w-24 h-24 shadow-2xl border-4 rounded-lg overflow-hidden bg-stone-100 ${isCompletelyUnplayable ? 'border-red-500 opacity-80' : 'border-stone-800'}`}>
