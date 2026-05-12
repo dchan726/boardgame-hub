@@ -1,8 +1,8 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { Play, RotateCw, Check, Trophy, Users, Plus, Trash2, X, AlertTriangle, RefreshCcw, Award, ZoomIn, ZoomOut, Eye } from 'lucide-react';
+import { Play, RotateCw, Check, Trophy, Users, Plus, Trash2, X, AlertTriangle, RefreshCcw, Award, ZoomIn, ZoomOut, Eye, Settings, PowerOff, ShieldAlert } from 'lucide-react';
 import { CARCASSONNE_TILES, getRotatedEdges, autoScoreBoard, performFinalScoring } from './data';
 
 export default function CarcassonneEngine({ roomId, roomData, userId }) {
@@ -16,10 +16,16 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
   const [activeMeepleType, setActiveMeepleType] = useState('normal'); 
   const [showGameOverModal, setShowGameOverModal] = useState(true);
 
+  // 房主控制狀態
+  const [showHostMenu, setShowHostMenu] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(null); // 'end_game' | 'close_room' | null
+
   const boardRef = useRef(null);
   const { board, deck, currentPhase, currentDrawnTile, players, turnIndex, lastPlacedCoord } = roomData;
   const activePlayer = players[turnIndex] || players[0];
   const isMyTurn = activePlayer.id === userId;
+  const isHost = roomData.host === userId; 
+  // 注意：這裡使用正確的集合名稱 'rooms_carcassonne'
   const dbDocRef = doc(db, 'rooms_carcassonne', roomId);
 
   const validPlacements = useMemo(() => {
@@ -248,6 +254,20 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
       return false;
   }, [board, userId]);
 
+  // ★ 房主專用功能：中斷並結算遊戲
+  const forceEndGame = async () => {
+    setConfirmModal(null);
+    setShowHostMenu(false);
+    await triggerGameEnd(board, players);
+  };
+
+  // ★ 房主專用功能：強制解散房間
+  const forceCloseRoom = async () => {
+    setConfirmModal(null);
+    setShowHostMenu(false);
+    await deleteDoc(dbDocRef); // 將會觸發 Room.jsx 內的監聽器，使所有玩家自動返回大廳
+  };
+
   const renderTileSVG = (type, rotation, isGhost = false) => {
     const tileDef = CARCASSONNE_TILES[type];
     const rotDeg = rotation * 90;
@@ -362,7 +382,31 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
   const TILE_SIZE = 100;
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">      <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+    <div className="relative w-full h-screen overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
+      <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+
+      {/* 房主安全確認視窗 (Modal) */}
+      {confirmModal && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white max-w-sm w-full p-6 rounded-[2rem] shadow-2xl border-4 border-stone-800 text-center animate-[bounce_0.3s_ease-out]">
+            <AlertTriangle className="mx-auto text-red-500 w-16 h-16 mb-4" />
+            <h3 className="text-2xl font-black mb-2 text-stone-800">
+              {confirmModal === 'end_game' ? '提前結算遊戲？' : '強制解散房間？'}
+            </h3>
+            <p className="text-stone-500 font-bold mb-6">
+              {confirmModal === 'end_game' 
+                ? '將立刻中斷遊戲，並自動為所有未完成的地形與農夫計分！' 
+                : '此操作將刪除房間所有資料，正在遊玩的玩家將被踢回大廳！'}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="interactive-btn flex-1 bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 rounded-xl transition-colors">取消</button>
+              <button onClick={confirmModal === 'end_game' ? forceEndGame : forceCloseRoom} className="interactive-btn flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg">確定執行</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 遊戲結束畫面 (可收起) */}
       {currentPhase === 'game_over' && showGameOverModal && (
          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <div className="bg-white max-w-md w-full rounded-[2rem] border-4 border-stone-800 shadow-2xl overflow-hidden animate-[bounce_0.5s_ease-out]">
@@ -382,10 +426,10 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
                     ))}
                 </div>
                 <div className="bg-stone-100 p-4 space-y-2">
-                     <button onClick={() => setShowGameOverModal(false)} className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                     <button onClick={() => setShowGameOverModal(false)} className="interactive-btn w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
                        <Eye size={20}/> 觀賞最終版圖
                      </button>
-                     <button onClick={() => navigate('/hub')} className="w-full bg-stone-800 hover:bg-stone-900 text-white font-bold py-4 rounded-xl shadow-lg transition-transform hover:scale-105">
+                     <button onClick={() => navigate('/hub')} className="interactive-btn w-full bg-stone-800 hover:bg-stone-900 text-white font-bold py-4 rounded-xl shadow-lg transition-transform hover:scale-105">
                        回到大廳
                      </button>
                 </div>
@@ -393,6 +437,7 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
          </div>
       )}
 
+      {/* 頂部狀態列 */}
       <div className="game-ui absolute top-2 left-2 right-2 z-10 flex justify-between items-start pointer-events-none">
         <div className="bg-white/95 backdrop-blur-md border-2 border-stone-200 p-2 rounded-2xl shadow-lg flex gap-2 overflow-x-auto px-1 hide-scrollbar pointer-events-auto">
           {players.map((p, idx) => (
@@ -413,13 +458,34 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
         </div>
         
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
-          <div className="text-right px-4 py-2 bg-stone-100 rounded-xl border-2 border-stone-300 shadow-md">
-            <div className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">剩餘牌堆</div>
-            <div className="text-xl font-black text-stone-800 font-mono leading-none">{deck.length}</div>
+          <div className="flex gap-2">
+             <div className="text-right px-4 py-2 bg-stone-100 rounded-xl border-2 border-stone-300 shadow-md">
+               <div className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">剩餘牌堆</div>
+               <div className="text-xl font-black text-stone-800 font-mono leading-none">{deck.length}</div>
+             </div>
+             
+             {/* 房主專屬選單按鈕 */}
+             {isHost && currentPhase !== 'game_over' && (
+               <div className="relative">
+                 <button onClick={() => setShowHostMenu(!showHostMenu)} className="interactive-btn p-3 h-full bg-stone-800 text-white rounded-xl shadow-md hover:bg-stone-700 transition-colors">
+                   <Settings size={22} />
+                 </button>
+                 {showHostMenu && (
+                   <div className="absolute right-0 top-full mt-2 w-48 bg-white border-2 border-stone-200 rounded-2xl shadow-xl overflow-hidden z-50 animate-[fade-in_0.2s_ease-out]">
+                     <button onClick={() => setConfirmModal('end_game')} className="interactive-btn w-full flex items-center gap-2 px-4 py-3 font-bold text-amber-600 hover:bg-amber-50 border-b border-stone-100 text-left transition-colors">
+                       <PowerOff size={18} /> 提前結算遊戲
+                     </button>
+                     <button onClick={() => setConfirmModal('close_room')} className="interactive-btn w-full flex items-center gap-2 px-4 py-3 font-bold text-red-600 hover:bg-red-50 text-left transition-colors">
+                       <ShieldAlert size={18} /> 強制解散房間
+                     </button>
+                   </div>
+                 )}
+               </div>
+             )}
           </div>
           
           {currentPhase === 'game_over' && !showGameOverModal && (
-             <button onClick={() => setShowGameOverModal(true)} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl shadow-lg animate-bounce flex items-center gap-2">
+             <button onClick={() => setShowGameOverModal(true)} className="interactive-btn bg-blue-600 text-white font-bold px-4 py-2 rounded-xl shadow-lg animate-bounce flex items-center gap-2">
                <Trophy size={18}/> 顯示計分板
              </button>
           )}
@@ -427,9 +493,9 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
       </div>
 
       <div className="game-ui absolute left-4 top-24 z-10 flex flex-col gap-2 bg-white/80 backdrop-blur p-2 rounded-xl border border-stone-200 shadow-md">
-          <button onClick={()=>setScale(s=>Math.min(2.5, s+0.2))} className="p-2 hover:bg-stone-200 rounded-lg text-stone-600"><ZoomIn size={20}/></button>
+          <button onClick={()=>setScale(s=>Math.min(2.5, s+0.2))} className="interactive-btn p-2 hover:bg-stone-200 rounded-lg text-stone-600"><ZoomIn size={20}/></button>
           <div className="text-xs font-bold text-center text-stone-400">{Math.round(scale*100)}%</div>
-          <button onClick={()=>setScale(s=>Math.max(0.3, s-0.2))} className="p-2 hover:bg-stone-200 rounded-lg text-stone-600"><ZoomOut size={20}/></button>
+          <button onClick={()=>setScale(s=>Math.max(0.3, s-0.2))} className="interactive-btn p-2 hover:bg-stone-200 rounded-lg text-stone-600"><ZoomOut size={20}/></button>
       </div>
 
       <div 
