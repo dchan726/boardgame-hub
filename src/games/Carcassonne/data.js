@@ -1,89 +1,208 @@
-// ... （保留之前所有的代碼結構，只更新 renderTileSVG 函數）
+export const CARCASSONNE_TILES = {
+  starter: { id: 'starter', edges: ['C','R','F','R'], count: 1, conn: { C: [[0]], R: [[1,3]], F: [[2]] }, shields: 0 },
+  C4_shield: { id: 'C4_shield', edges: ['C','C','C','C'], count: 1, conn: { C: [[0,1,2,3]], F: [] }, shields: 1 },
+  C3_shield: { id: 'C3_shield', edges: ['C','C','F','C'], count: 1, conn: { C: [[0,1,3]], F: [[2]] }, shields: 1 },
+  C3: { id: 'C3', edges: ['C','C','F','C'], count: 2, conn: { C: [[0,1,3]], F: [[2]] }, shields: 0 },
+  C3_garden: { id: 'C3_garden', edges: ['C','C','F','C'], count: 1, conn: { C: [[0,1,3]], F: [[2]] }, shields: 0, hasGarden: true },
+  C3_R_shield: { id: 'C3_R_shield', edges: ['C','C','R','C'], count: 2, conn: { C: [[0,1,3]], R: [[2]], F: [] }, shields: 1 },
+  C3_R: { id: 'C3_R', edges: ['C','C','R','C'], count: 1, conn: { C: [[0,1,3]], R: [[2]], F: [] }, shields: 0 },
+  C2_opp: { id: 'C2_opp', edges: ['C','F','C','F'], count: 2, conn: { C: [[0],[2]], F: [[1],[3]] }, shields: 0 }, 
+  C2_opp_garden: { id: 'C2_opp_garden', edges: ['C','F','C','F'], count: 1, conn: { C: [[0],[2]], F: [[1],[3]] }, shields: 0, hasGarden: true },
+  C2_adj_shield: { id: 'C2_adj_shield', edges: ['C','C','F','F'], count: 2, conn: { C: [[0,1]], F: [[2,3]] }, shields: 1 }, 
+  C2_adj: { id: 'C2_adj', edges: ['C','C','F','F'], count: 2, conn: { C: [[0,1]], F: [[2,3]] }, shields: 0 },
+  C2_adj_garden: { id: 'C2_adj_garden', edges: ['C','C','F','F'], count: 1, conn: { C: [[0,1]], F: [[2,3]] }, shields: 0, hasGarden: true },
+  C2_sep: { id: 'C2_sep', edges: ['C','F','F','C'], count: 2, conn: { C: [[0],[3]], F: [[1,2]] }, shields: 0 }, 
+  C1: { id: 'C1', edges: ['C','F','F','F'], count: 4, conn: { C: [[0]], F: [[1,2,3]] }, shields: 0 },
+  C1_garden: { id: 'C1_garden', edges: ['C','F','F','F'], count: 1, conn: { C: [[0]], F: [[1,2,3]] }, shields: 0, hasGarden: true },
+  C1_R_straight: { id: 'C1_R_straight', edges: ['C','R','F','R'], count: 2, conn: { C: [[0]], R: [[1,3]], F: [[2]] }, shields: 0 },
+  C1_R_straight_garden: { id: 'C1_R_straight_garden', edges: ['C','R','F','R'], count: 1, conn: { C: [[0]], R: [[1,3]], F: [[2]] }, shields: 0, hasGarden: true },
+  C1_R_curve_right: { id: 'C1_R_curve_right', edges: ['C','R','R','F'], count: 3, conn: { C: [[0]], R: [[1,2]], F: [[3]] }, shields: 0 },
+  C1_R_curve_left: { id: 'C1_R_curve_left', edges: ['C','F','R','R'], count: 3, conn: { C: [[0]], R: [[2,3]], F: [[1]] }, shields: 0 },
+  C1_R_cross_3: { id: 'C1_R_cross_3', edges: ['C','R','R','R'], count: 3, conn: { C: [[0]], R: [[1],[2],[3]], F: [] }, shields: 0 }, 
+  R_straight: { id: 'R_straight', edges: ['F','R','F','R'], count: 6, conn: { R: [[1,3]], F: [[0],[2]] }, shields: 0 },
+  R_straight_garden: { id: 'R_straight_garden', edges: ['F','R','F','R'], count: 2, conn: { R: [[1,3]], F: [[0],[2]] }, shields: 0, hasGarden: true },
+  R_curve: { id: 'R_curve', edges: ['F','F','R','R'], count: 8, conn: { R: [[2,3]], F: [[0,1]] }, shields: 0 },
+  R_curve_garden: { id: 'R_curve_garden', edges: ['F','F','R','R'], count: 1, conn: { R: [[2,3]], F: [[0,1]] }, shields: 0, hasGarden: true },
+  R_cross_4: { id: 'R_cross_4', edges: ['R','R','R','R'], count: 1, conn: { R: [[0],[1],[2],[3]], F: [] }, shields: 0 },
+  R_cross_3: { id: 'R_cross_3', edges: ['F','R','R','R'], count: 4, conn: { R: [[1],[2],[3]], F: [[0]] }, shields: 0 },
+  Cloister: { id: 'Cloister', edges: ['F','F','F','F'], count: 4, special: 'cloister', conn: { F: [[0,1,2,3]] }, shields: 0 },
+  Cloister_R: { id: 'Cloister_R', edges: ['F','F','R','F'], count: 2, special: 'cloister', conn: { R: [[2]], F: [[0,1,3]] }, shields: 0 },
+};
 
-  const renderTileSVG = (type, rotation, isGhost = false) => {
-    const tileDef = CARCASSONNE_TILES[type];
-    const rotDeg = rotation * 90;
+export const COLORS = ['#ef4444', '#3b82f6', '#eab308', '#22c55e', '#a855f7'];
 
-    // ★ 修正：定義手繪風的顏色與紋理
-    const cGrass = '#a7c97e', cGrassDark = '#8aab69';
-    const cRoadEdge = '#b5ad9e', cRoadCenter = '#ebe6de';
-    const cCityBase = '#e2cda3', cCityWall = '#8b6045';
+export const getRotatedEdges = (edges, rotation) => {
+  const steps = rotation % 4; const newEdges = [];
+  for (let i = 0; i < 4; i++) newEdges[i] = edges[(i - steps + 4) % 4];
+  return newEdges;
+};
 
-    // ... （ renderCityGroup 和 renderRoadGroup 函數保持不變）
+export const runDFS = (boardData, startCoord, startEdge, featType) => {
+    let queue = [{ coord: startCoord, edge: startEdge }];
+    let visitedEdges = new Set(); let featTiles = new Set(); let featMeeples = []; let isComplete = true;
 
-    return (
-      <svg viewBox="0 0 100 100" className={`w-full h-full ${isGhost ? 'opacity-80 drop-shadow-lg' : ''}`} style={{ transform: `rotate(${rotDeg}deg)`, transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
-        <defs>
-          {/* ★ 新增：定義手繪紋理圖案 */}
-          <pattern id="grass-sketch" patternUnits="userSpaceOnUse" width="25" height="25">
-            <rect width="25" height="25" fill={cGrass} />
-            <circle cx="5" cy="5" r="1.5" fill={cGrassDark} opacity="0.6"/>
-            {/* 加入不規則的手繪線條 */}
-            <path d="M 12 20 Q 14 16 16 20" stroke={cGrassDark} fill="none" opacity="0.5" strokeWidth="1.5" strokeLinecap="round"/>
-            <path d="M 18 10 Q 20 6 22 10" stroke={cGrassDark} fill="none" opacity="0.3" strokeWidth="1" strokeLinecap="round"/>
-            <path d="M 3 15 L 7 19" stroke={cGrassDark} fill="none" opacity="0.4" strokeWidth="1" strokeLinecap="round"/>
-          </pattern>
-        </defs>
-        
-        {/* ★ 修正：使用手繪紋理填充背景 */}
-        <rect width="100" height="100" fill="url(#grass-sketch)" />
-        
-        {/* ★ 修正：將原本的邊框改為更粗且帶有墨水感的線條 */}
-        <rect width="100" height="100" fill="none" stroke="#6d864b" strokeWidth="1.5" strokeLinecap="round" rx="2"/> 
-        
-        {/* ★ 修正：將所有的路徑增加手繪筆觸（例如不規則的邊緣、墨水暈染感，此處通過 SVG 屬性模擬） */}
-        {tileDef.conn.R?.map((group, idx) => (
-            <g key={`road-${idx}`} style={{ filter: 'url(#pencil-texture)' }}>
-                {renderRoadGroup(group)}
-            </g>
-        ))}
-        {tileDef.id.includes('cross') && <rect x={40} y={40} width={20} height={20} fill={cRoadEdge} stroke="#8c8577" strokeWidth="2" rx="1"/>}
-        {tileDef.id.includes('cross') && <rect x={43} y={43} width={14} height={14} fill={cRoadCenter} rx="0.5"/>}
-        
-        {tileDef.conn.C?.map((group, idx) => (
-            <g key={`city-${idx}`} style={{ filter: 'url(#ink-bleed)' }}>
-                {renderCityGroup(group, idx === 0 && tileDef.shields > 0)}
-            </g>
-        ))}
-        
-        {tileDef.special === 'cloister' && (
-          <g transform="translate(50, 50)" style={{ filter: 'url(#pencil-texture)' }}>
-            {/* ★ 修正：將修道院的設計改為更有手繪素描感的風格 */}
-            <circle cx="0" cy="0" r="22" fill="#c4ad8d" stroke="#a38f72" strokeWidth="2"/>
-            <circle cx="0" cy="0" r="18" fill="none" stroke="#a38f72" strokeWidth="1" strokeDasharray="3 3"/>
-            <rect x="-14" y="-12" width="28" height="26" fill="#cfcdca" stroke="#5c5c5c" strokeWidth="2.5" rx="2" />
-            <rect x="-6" y="2" width="12" height="12" fill="#8c8b88" stroke="#5c5c5c" strokeWidth="1.5"/> 
-            <path d="M -16 0 L 0 -16 L 16 0 Z" fill="#b04331" stroke="#5c5c5c" strokeWidth="2.5" strokeLinejoin="round" />
-            {/* ...其餘細節... */}
-          </g>
-        )}
-        
-        {tileDef.hasGarden && (
-          <g transform="translate(25, 25)" style={{ filter: 'url(#pencil-texture)' }}>
-            {/* ★ 修正：將花園的計分點改為更有手繪感的不規則圓形與顏色暈染 */}
-            <circle cx="0" cy="0" r="14" fill="#15803d" stroke="#0f5a2a" strokeWidth="2"/>
-            <circle cx="0" cy="0" r="11" fill="#22c55e" stroke="none"/>
-            <circle cx="-5" cy="-5" r="2.5" fill="#fbbf24" stroke="#d9a41b" strokeWidth="1"/>
-            <circle cx="5" cy="3" r="2.5" fill="#3b82f6" stroke="#2a62c9" strokeWidth="1"/>
-            <circle cx="-3" cy="6" r="2" fill="#ef4444" stroke="#c93838" strokeWidth="1"/>
-            <circle cx="4" cy="-4" r="1.5" fill="#a855f7" stroke="#8a44c9" strokeWidth="1"/>
-          </g>
-        )}
+    while(queue.length > 0) {
+        let curr = queue.shift(); let key = `${curr.coord}-${curr.edge}`;
+        if(visitedEdges.has(key)) continue; visitedEdges.add(key);
 
-        {/* ★ 新增：定義 SVG 濾鏡來模擬墨水暈染與鉛筆質感 */}
-        <defs>
-            <filter id="pencil-texture">
-                <feTurbulence type="fractalNoise" baseFrequency="2" numOctaves="3" result="noise"/>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
-            </filter>
-            <filter id="ink-bleed">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur"/>
-                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/>
-                <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
-            </filter>
-        </defs>
-      </svg>
-    );
-  };
+        if (!boardData[curr.coord]) { isComplete = false; continue; }
+        featTiles.add(curr.coord);
 
-// ... （保留其餘代碼）
+        let tileData = boardData[curr.coord]; let tileDef = CARCASSONNE_TILES[tileData.type];
+        let rot = tileData.rotation; let origEdge = (curr.edge - rot + 4) % 4;
+        
+        let connectedOrigEdges = [origEdge];
+        if(tileDef.conn[featType]) {
+            for(let group of tileDef.conn[featType]) { if(group.includes(origEdge)) { connectedOrigEdges = group; break; } }
+        }
+
+        let connectedRotEdges = connectedOrigEdges.map(e => (e + rot) % 4);
+
+        (tileData.meeples || []).forEach((m, idx) => {
+            if (m.position === 'center' || m.position === 'garden') return; 
+            let mEdge = { 'top': 0, 'right': 1, 'bottom': 2, 'left': 3 }[m.position];
+            if (connectedRotEdges.includes(mEdge)) {
+                if (!featMeeples.find(fm => fm.coord === curr.coord && fm.mIndex === idx)) featMeeples.push({ player: m.player, coord: curr.coord, mIndex: idx, type: m.type });
+            }
+        });
+
+        for(let rotEdge of connectedRotEdges) {
+            visitedEdges.add(`${curr.coord}-${rotEdge}`);
+            let [x, y] = curr.coord.split(',').map(Number);
+            if(rotEdge===0) y-=1; if(rotEdge===1) x+=1; if(rotEdge===2) y+=1; if(rotEdge===3) x-=1;
+            let nCoord = `${x},${y}`; let targetEdge = (rotEdge + 2) % 4;
+
+            if (!boardData[nCoord]) { isComplete = false; } 
+            else if(!visitedEdges.has(`${nCoord}-${targetEdge}`)) { queue.push({ coord: nCoord, edge: targetEdge }); }
+        }
+    }
+    return { isComplete, featTiles, featMeeples, traversedEdges: visitedEdges };
+};
+
+export const autoScoreBoard = (boardData, playersData) => {
+    let b = JSON.parse(JSON.stringify(boardData)); let p = JSON.parse(JSON.stringify(playersData)); let visitedFeatures = new Set();
+
+    for (const coord of Object.keys(b)) {
+        const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
+        if (tileDef.special === 'cloister' || tileDef.hasGarden) {
+            const cIdx = tile.meeples.findIndex(m => m.position === 'center' || m.position === 'garden');
+            if (cIdx !== -1) {
+                const [x, y] = coord.split(',').map(Number); let count = 0;
+                for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) if(b[`${x+dx},${y+dy}`]) count++;
+                if (count === 9) { 
+                    const m = tile.meeples[cIdx]; const pIdx = p.findIndex(pl => pl.id === m.player);
+                    if(pIdx !== -1) { p[pIdx].score += 9; if (m.type === 'abbot') p[pIdx].abbots++; else p[pIdx].meeples++; }
+                    b[coord].meeples.splice(cIdx, 1);
+                }
+            }
+        }
+
+        for (let i=0; i<4; i++) {
+            let rot = tile.rotation; let origEdge = (i - rot + 4) % 4; let featType = tileDef.edges[origEdge];
+            if ((featType === 'C' || featType === 'R') && !visitedFeatures.has(`${coord}-${i}`)) {
+                let { isComplete, featTiles, featMeeples, traversedEdges } = runDFS(b, coord, i, featType);
+                traversedEdges.forEach(e => visitedFeatures.add(e));
+                if (isComplete && featMeeples.length > 0) {
+                    let shieldCount = 0; featTiles.forEach(c => { shieldCount += CARCASSONNE_TILES[b[c].type].shields || 0; });
+                    const pts = (featTiles.size + shieldCount) * (featType === 'C' ? 2 : 1);
+                    let counts = {}; featMeeples.forEach(m => { counts[m.player] = (counts[m.player] || 0) + 1; });
+                    let maxMeeples = Math.max(...Object.values(counts)); let winners = Object.keys(counts).filter(id => counts[id] === maxMeeples);
+                    winners.forEach(wId => { const pIdx = p.findIndex(pl => pl.id === wId); if(pIdx !== -1) p[pIdx].score += pts; });
+
+                    let meeplesToRemove = {}; 
+                    featMeeples.forEach(m => {
+                        if(!meeplesToRemove[m.coord]) meeplesToRemove[m.coord] = [];
+                        meeplesToRemove[m.coord].push(m.mIndex);
+                        const pIdx = p.findIndex(pl => pl.id === m.player);
+                        if(pIdx !== -1) { if (m.type === 'abbot') p[pIdx].abbots++; else p[pIdx].meeples++; }
+                    });
+                    for(let c in meeplesToRemove) meeplesToRemove[c].sort((a,b)=>b-a).forEach(idx => { b[c].meeples.splice(idx, 1); });
+                }
+            }
+        }
+    }
+    return { updatedBoard: b, updatedPlayers: p };
+};
+
+export const performFinalScoring = (boardData, playersData) => {
+    let b = JSON.parse(JSON.stringify(boardData));
+    let p = JSON.parse(JSON.stringify(playersData));
+
+    for (const coord of Object.keys(b)) {
+        for (let i = b[coord].meeples.length - 1; i >= 0; i--) {
+            const m = b[coord].meeples[i];
+            if (!m.isFarmer) {
+                let score = 0;
+                const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
+                if (m.position === 'center' || m.position === 'garden') {
+                    const [x, y] = coord.split(',').map(Number);
+                    for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) if(b[`${x+dx},${y+dy}`]) score++;
+                } else {
+                    const mEdge = { 'top': 0, 'right': 1, 'bottom': 2, 'left': 3 }[m.position];
+                    if (mEdge !== undefined) {
+                        let origEdge = (mEdge - tile.rotation + 4) % 4; let featType = tileDef.edges[origEdge];
+                        if (featType === 'C' || featType === 'R') {
+                            let { featTiles } = runDFS(b, coord, mEdge, featType);
+                            let shieldCount = 0; featTiles.forEach(c => { shieldCount += CARCASSONNE_TILES[b[c].type].shields || 0; });
+                            score = featTiles.size + shieldCount;
+                        }
+                    }
+                }
+                const pIdx = p.findIndex(pl => pl.id === m.player);
+                if (pIdx !== -1) p[pIdx].score += score;
+                b[coord].meeples.splice(i, 1); 
+            }
+        }
+    }
+
+    let visitedFieldEdges = new Set();
+    for (const coord of Object.keys(b)) {
+        const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
+        for (let edge = 0; edge < 4; edge++) {
+            let rot = tile.rotation; let origEdge = (edge - rot + 4) % 4;
+            if (tileDef.edges[origEdge] === 'F' && !visitedFieldEdges.has(`${coord}-${edge}`)) {
+                let { featTiles, featMeeples, traversedEdges } = runDFS(b, coord, edge, 'F');
+                traversedEdges.forEach(e => visitedFieldEdges.add(e));
+
+                if (featMeeples.length > 0) {
+                    let touchingCities = new Set();
+                    featTiles.forEach(fCoord => {
+                        const fTile = b[fCoord]; const fTileDef = CARCASSONNE_TILES[fTile.type];
+                        let touches = true;
+                        if (fTileDef.id === 'starter' || fTileDef.id.startsWith('C1_R_straight')) touches = false;
+                        
+                        if (touches) {
+                            for (let cEdge = 0; cEdge < 4; cEdge++) {
+                                let cOrig = (cEdge - fTile.rotation + 4) % 4;
+                                if (fTileDef.edges[cOrig] === 'C') {
+                                    let cityDFS = runDFS(b, fCoord, cEdge, 'C');
+                                    if (cityDFS.isComplete) touchingCities.add(Array.from(cityDFS.traversedEdges).sort().join('|'));
+                                }
+                            }
+                        }
+                    });
+
+                    const points = touchingCities.size * 3; 
+                    let counts = {};
+                    featMeeples.forEach(m => { counts[m.player] = (counts[m.player] || 0) + 1; });
+                    let maxMeeples = Math.max(...Object.values(counts));
+                    let winners = Object.keys(counts).filter(id => counts[id] === maxMeeples);
+
+                    winners.forEach(wId => {
+                        const pIdx = p.findIndex(pl => pl.id === wId);
+                        if (pIdx !== -1) p[pIdx].score += points;
+                    });
+
+                    featMeeples.forEach(m => {
+                        const mTile = b[m.coord];
+                        const mIdx = mTile.meeples.findIndex(x => x.player === m.player && x.isFarmer);
+                        if (mIdx !== -1) mTile.meeples.splice(mIdx, 1);
+                    });
+                }
+            }
+        }
+    }
+
+    p.sort((a, b) => b.score - a.score);
+    return { finalBoard: b, finalPlayers: p };
+};
