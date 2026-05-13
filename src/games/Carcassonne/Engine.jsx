@@ -315,7 +315,6 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
       <div className="relative w-full h-[100dvh] overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
       <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
 
-      {/* 規則說明彈出視窗 */}
       {showRulesModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
           <div className="bg-white max-w-xl w-full h-[80vh] md:h-auto md:max-h-[85vh] rounded-[2rem] shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden">
@@ -328,7 +327,7 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
                  <h3 className="text-xl font-black mb-2 text-stone-800 border-b-2 border-stone-200 pb-1">📌 回合流程</h3>
                  <ol className="list-decimal pl-5 space-y-1 font-bold text-stone-600">
                    <li><span className="text-blue-600">翻開版圖：</span>從牌堆抽出一張新版圖。</li>
-                   <li><span className="text-blue-600">放置版圖：</span>旋轉並拼接到場上，<strong className="text-red-500">必須與相鄰的所有地形（道路、城堡、草地）完全吻合</strong>。</li>
+                   <li><span className="text-blue-600">放置版圖：</span>旋轉並拼接到場上，<strong className="text-red-500">必須與相鄰的所有地形完全吻合</strong>。</li>
                    <li><span className="text-blue-600">派駐親信 (選用)：</span>只能放在剛拼接的這張版圖上。前提是該地形的延伸範圍內 <strong className="text-red-500">沒有其他人的親信</strong>。</li>
                    <li><span className="text-blue-600">計分與回收：</span>若有道路、城堡或修道院因此完成，立即計算分數並收回該處的親信。</li>
                  </ol>
@@ -352,7 +351,7 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
                    </li>
                    <li>
                      <span className="text-purple-700 bg-purple-100 px-2 py-0.5 rounded">修道院長：</span>
-                     只能放置在修道院或花園上（花園的計分方式與修道院相同）。在你的回合中，如果選擇「不派駐新親信」，你可以<strong className="text-purple-600">提早收回院長</strong>，並立即獲得當下的版圖數量分數。
+                     只能放置在修道院或花園上。在你的回合中，如果選擇「不派駐新親信」，你可以<strong className="text-purple-600">提早收回院長</strong>，並立即獲得當下的版圖數量分數。
                    </li>
                  </ul>
                </section>
@@ -411,7 +410,6 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
          </div>
       )}
 
-      {/* 頂部狀態列 */}
       <div className="game-ui absolute top-2 left-2 right-2 z-10 flex justify-between items-start pointer-events-none">
         <div className="bg-white/95 backdrop-blur-md border-2 border-stone-200 p-2 rounded-2xl shadow-lg flex gap-2 overflow-x-auto px-1 hide-scrollbar pointer-events-auto">
           {players.map((p, idx) => (
