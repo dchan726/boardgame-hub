@@ -37,187 +37,172 @@ export const getRotatedEdges = (edges, rotation) => {
   return newEdges;
 };
 
-export const generateDeck = () => {
-  let deck = [];
-  for (const [key, tile] of Object.entries(CARCASSONNE_TILES)) {
-    if (key === 'starter') continue;
-    for (let i = 0; i < tile.count; i++) deck.push({ id: `${key}_${i}`, type: key });
-  }
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-};
-
 export const runDFS = (boardData, startCoord, startEdge, featType) => {
-  let queue = [{ coord: startCoord, edge: startEdge }];
-  let visitedEdges = new Set(); let featTiles = new Set(); let featMeeples = []; let isComplete = true;
+    let queue = [{ coord: startCoord, edge: startEdge }];
+    let visitedEdges = new Set(); let featTiles = new Set(); let featMeeples = []; let isComplete = true;
 
-  while(queue.length > 0) {
-      let curr = queue.shift(); let key = `${curr.coord}-${curr.edge}`;
-      if(visitedEdges.has(key)) continue; visitedEdges.add(key);
+    while(queue.length > 0) {
+        let curr = queue.shift(); let key = `${curr.coord}-${curr.edge}`;
+        if(visitedEdges.has(key)) continue; visitedEdges.add(key);
 
-      if (!boardData[curr.coord]) { isComplete = false; continue; }
-      featTiles.add(curr.coord);
+        if (!boardData[curr.coord]) { isComplete = false; continue; }
+        featTiles.add(curr.coord);
 
-      let tileData = boardData[curr.coord]; let tileDef = CARCASSONNE_TILES[tileData.type];
-      let rot = tileData.rotation; let origEdge = (curr.edge - rot + 4) % 4;
-      
-      let connectedOrigEdges = [origEdge];
-      if(tileDef.conn[featType]) {
-          for(let group of tileDef.conn[featType]) { if(group.includes(origEdge)) { connectedOrigEdges = group; break; } }
-      }
+        let tileData = boardData[curr.coord]; let tileDef = CARCASSONNE_TILES[tileData.type];
+        let rot = tileData.rotation; let origEdge = (curr.edge - rot + 4) % 4;
+        
+        let connectedOrigEdges = [origEdge];
+        if(tileDef.conn[featType]) {
+            for(let group of tileDef.conn[featType]) { if(group.includes(origEdge)) { connectedOrigEdges = group; break; } }
+        }
 
-      let connectedRotEdges = connectedOrigEdges.map(e => (e + rot) % 4);
+        let connectedRotEdges = connectedOrigEdges.map(e => (e + rot) % 4);
 
-      (tileData.meeples || []).forEach((m, idx) => {
-          if (m.position === 'center' || m.position === 'garden') return; 
-          let mEdge = { 'top': 0, 'right': 1, 'bottom': 2, 'left': 3 }[m.position];
-          if (connectedRotEdges.includes(mEdge)) {
-              if (!featMeeples.find(fm => fm.coord === curr.coord && fm.mIndex === idx)) featMeeples.push({ player: m.player, coord: curr.coord, mIndex: idx, type: m.type });
-          }
-      });
+        (tileData.meeples || []).forEach((m, idx) => {
+            if (m.position === 'center' || m.position === 'garden') return; 
+            let mEdge = { 'top': 0, 'right': 1, 'bottom': 2, 'left': 3 }[m.position];
+            if (connectedRotEdges.includes(mEdge)) {
+                if (!featMeeples.find(fm => fm.coord === curr.coord && fm.mIndex === idx)) featMeeples.push({ player: m.player, coord: curr.coord, mIndex: idx, type: m.type });
+            }
+        });
 
-      for(let rotEdge of connectedRotEdges) {
-          visitedEdges.add(`${curr.coord}-${rotEdge}`);
-          let [x, y] = curr.coord.split(',').map(Number);
-          if(rotEdge===0) y-=1; if(rotEdge===1) x+=1; if(rotEdge===2) y+=1; if(rotEdge===3) x-=1;
-          let nCoord = `${x},${y}`; let targetEdge = (rotEdge + 2) % 4;
+        for(let rotEdge of connectedRotEdges) {
+            visitedEdges.add(`${curr.coord}-${rotEdge}`);
+            let [x, y] = curr.coord.split(',').map(Number);
+            if(rotEdge===0) y-=1; if(rotEdge===1) x+=1; if(rotEdge===2) y+=1; if(rotEdge===3) x-=1;
+            let nCoord = `${x},${y}`; let targetEdge = (rotEdge + 2) % 4;
 
-          if (!boardData[nCoord]) { isComplete = false; } 
-          else if(!visitedEdges.has(`${nCoord}-${targetEdge}`)) { queue.push({ coord: nCoord, edge: targetEdge }); }
-      }
-  }
-  return { isComplete, featTiles, featMeeples, traversedEdges: visitedEdges };
+            if (!boardData[nCoord]) { isComplete = false; } 
+            else if(!visitedEdges.has(`${nCoord}-${targetEdge}`)) { queue.push({ coord: nCoord, edge: targetEdge }); }
+        }
+    }
+    return { isComplete, featTiles, featMeeples, traversedEdges: visitedEdges };
 };
 
 export const autoScoreBoard = (boardData, playersData) => {
-  let b = JSON.parse(JSON.stringify(boardData)); let p = JSON.parse(JSON.stringify(playersData)); let visitedFeatures = new Set();
+    let b = JSON.parse(JSON.stringify(boardData)); let p = JSON.parse(JSON.stringify(playersData)); let visitedFeatures = new Set();
 
-  for (const coord of Object.keys(b)) {
-      const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
-      if (tileDef.special === 'cloister' || tileDef.hasGarden) {
-          const cIdx = tile.meeples.findIndex(m => m.position === 'center' || m.position === 'garden');
-          if (cIdx !== -1) {
-              const [x, y] = coord.split(',').map(Number); let count = 0;
-              for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) if(b[`${x+dx},${y+dy}`]) count++;
-              if (count === 9) { 
-                  const m = tile.meeples[cIdx]; const pIdx = p.findIndex(pl => pl.id === m.player);
-                  if(pIdx !== -1) { p[pIdx].score += 9; if (m.type === 'abbot') p[pIdx].abbots++; else p[pIdx].meeples++; }
-                  b[coord].meeples.splice(cIdx, 1);
-              }
-          }
-      }
+    for (const coord of Object.keys(b)) {
+        const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
+        if (tileDef.special === 'cloister' || tileDef.hasGarden) {
+            const cIdx = tile.meeples.findIndex(m => m.position === 'center' || m.position === 'garden');
+            if (cIdx !== -1) {
+                const [x, y] = coord.split(',').map(Number); let count = 0;
+                for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) if(b[`${x+dx},${y+dy}`]) count++;
+                if (count === 9) { 
+                    const m = tile.meeples[cIdx]; const pIdx = p.findIndex(pl => pl.id === m.player);
+                    if(pIdx !== -1) { p[pIdx].score += 9; if (m.type === 'abbot') p[pIdx].abbots++; else p[pIdx].meeples++; }
+                    b[coord].meeples.splice(cIdx, 1);
+                }
+            }
+        }
 
-      for (let i=0; i<4; i++) {
-          let rot = tile.rotation; let origEdge = (i - rot + 4) % 4; let featType = tileDef.edges[origEdge];
-          if ((featType === 'C' || featType === 'R') && !visitedFeatures.has(`${coord}-${i}`)) {
-              let { isComplete, featTiles, featMeeples, traversedEdges } = runDFS(b, coord, i, featType);
-              traversedEdges.forEach(e => visitedFeatures.add(e));
-              if (isComplete && featMeeples.length > 0) {
-                  let shieldCount = 0; featTiles.forEach(c => { shieldCount += CARCASSONNE_TILES[b[c].type].shields || 0; });
-                  const pts = (featTiles.size + shieldCount) * (featType === 'C' ? 2 : 1);
-                  let counts = {}; featMeeples.forEach(m => { counts[m.player] = (counts[m.player] || 0) + 1; });
-                  let maxMeeples = Math.max(...Object.values(counts)); let winners = Object.keys(counts).filter(id => counts[id] === maxMeeples);
-                  winners.forEach(wId => { const pIdx = p.findIndex(pl => pl.id === wId); if(pIdx !== -1) p[pIdx].score += pts; });
+        for (let i=0; i<4; i++) {
+            let rot = tile.rotation; let origEdge = (i - rot + 4) % 4; let featType = tileDef.edges[origEdge];
+            if ((featType === 'C' || featType === 'R') && !visitedFeatures.has(`${coord}-${i}`)) {
+                let { isComplete, featTiles, featMeeples, traversedEdges } = runDFS(b, coord, i, featType);
+                traversedEdges.forEach(e => visitedFeatures.add(e));
+                if (isComplete && featMeeples.length > 0) {
+                    let shieldCount = 0; featTiles.forEach(c => { shieldCount += CARCASSONNE_TILES[b[c].type].shields || 0; });
+                    const pts = (featTiles.size + shieldCount) * (featType === 'C' ? 2 : 1);
+                    let counts = {}; featMeeples.forEach(m => { counts[m.player] = (counts[m.player] || 0) + 1; });
+                    let maxMeeples = Math.max(...Object.values(counts)); let winners = Object.keys(counts).filter(id => counts[id] === maxMeeples);
+                    winners.forEach(wId => { const pIdx = p.findIndex(pl => pl.id === wId); if(pIdx !== -1) p[pIdx].score += pts; });
 
-                  let meeplesToRemove = {}; 
-                  featMeeples.forEach(m => {
-                      if(!meeplesToRemove[m.coord]) meeplesToRemove[m.coord] = [];
-                      meeplesToRemove[m.coord].push(m.mIndex);
-                      const pIdx = p.findIndex(pl => pl.id === m.player);
-                      if(pIdx !== -1) { if (m.type === 'abbot') p[pIdx].abbots++; else p[pIdx].meeples++; }
-                  });
-                  for(let c in meeplesToRemove) meeplesToRemove[c].sort((a,b)=>b-a).forEach(idx => { b[c].meeples.splice(idx, 1); });
-              }
-          }
-      }
-  }
-  return { updatedBoard: b, updatedPlayers: p };
+                    let meeplesToRemove = {}; 
+                    featMeeples.forEach(m => {
+                        if(!meeplesToRemove[m.coord]) meeplesToRemove[m.coord] = [];
+                        meeplesToRemove[m.coord].push(m.mIndex);
+                        const pIdx = p.findIndex(pl => pl.id === m.player);
+                        if(pIdx !== -1) { if (m.type === 'abbot') p[pIdx].abbots++; else p[pIdx].meeples++; }
+                    });
+                    for(let c in meeplesToRemove) meeplesToRemove[c].sort((a,b)=>b-a).forEach(idx => { b[c].meeples.splice(idx, 1); });
+                }
+            }
+        }
+    }
+    return { updatedBoard: b, updatedPlayers: p };
 };
 
 export const performFinalScoring = (boardData, playersData) => {
-  let b = JSON.parse(JSON.stringify(boardData));
-  let p = JSON.parse(JSON.stringify(playersData));
+    let b = JSON.parse(JSON.stringify(boardData));
+    let p = JSON.parse(JSON.stringify(playersData));
 
-  // 1. 結算未完成地形
-  for (const coord of Object.keys(b)) {
-      for (let i = b[coord].meeples.length - 1; i >= 0; i--) {
-          const m = b[coord].meeples[i];
-          if (!m.isFarmer) {
-              let score = 0;
-              const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
-              if (m.position === 'center' || m.position === 'garden') {
-                  const [x, y] = coord.split(',').map(Number);
-                  for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) if(b[`${x+dx},${y+dy}`]) score++;
-              } else {
-                  const mEdge = { 'top': 0, 'right': 1, 'bottom': 2, 'left': 3 }[m.position];
-                  if (mEdge !== undefined) {
-                      let origEdge = (mEdge - tile.rotation + 4) % 4; let featType = tileDef.edges[origEdge];
-                      if (featType === 'C' || featType === 'R') {
-                          let { featTiles } = runDFS(b, coord, mEdge, featType);
-                          let shieldCount = 0; featTiles.forEach(c => { shieldCount += CARCASSONNE_TILES[b[c].type].shields || 0; });
-                          score = featTiles.size + shieldCount;
-                      }
-                  }
-              }
-              const pIdx = p.findIndex(pl => pl.id === m.player);
-              if (pIdx !== -1) p[pIdx].score += score;
-              b[coord].meeples.splice(i, 1); 
-          }
-      }
-  }
+    for (const coord of Object.keys(b)) {
+        for (let i = b[coord].meeples.length - 1; i >= 0; i--) {
+            const m = b[coord].meeples[i];
+            if (!m.isFarmer) {
+                let score = 0;
+                const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
+                if (m.position === 'center' || m.position === 'garden') {
+                    const [x, y] = coord.split(',').map(Number);
+                    for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) if(b[`${x+dx},${y+dy}`]) score++;
+                } else {
+                    const mEdge = { 'top': 0, 'right': 1, 'bottom': 2, 'left': 3 }[m.position];
+                    if (mEdge !== undefined) {
+                        let origEdge = (mEdge - tile.rotation + 4) % 4; let featType = tileDef.edges[origEdge];
+                        if (featType === 'C' || featType === 'R') {
+                            let { featTiles } = runDFS(b, coord, mEdge, featType);
+                            let shieldCount = 0; featTiles.forEach(c => { shieldCount += CARCASSONNE_TILES[b[c].type].shields || 0; });
+                            score = featTiles.size + shieldCount;
+                        }
+                    }
+                }
+                const pIdx = p.findIndex(pl => pl.id === m.player);
+                if (pIdx !== -1) p[pIdx].score += score;
+                b[coord].meeples.splice(i, 1); 
+            }
+        }
+    }
 
-  // 2. 結算農夫
-  let visitedFieldEdges = new Set();
-  for (const coord of Object.keys(b)) {
-      const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
-      for (let edge = 0; edge < 4; edge++) {
-          let rot = tile.rotation; let origEdge = (edge - rot + 4) % 4;
-          if (tileDef.edges[origEdge] === 'F' && !visitedFieldEdges.has(`${coord}-${edge}`)) {
-              let { featTiles, featMeeples, traversedEdges } = runDFS(b, coord, edge, 'F');
-              traversedEdges.forEach(e => visitedFieldEdges.add(e));
+    let visitedFieldEdges = new Set();
+    for (const coord of Object.keys(b)) {
+        const tile = b[coord]; const tileDef = CARCASSONNE_TILES[tile.type];
+        for (let edge = 0; edge < 4; edge++) {
+            let rot = tile.rotation; let origEdge = (edge - rot + 4) % 4;
+            if (tileDef.edges[origEdge] === 'F' && !visitedFieldEdges.has(`${coord}-${edge}`)) {
+                let { featTiles, featMeeples, traversedEdges } = runDFS(b, coord, edge, 'F');
+                traversedEdges.forEach(e => visitedFieldEdges.add(e));
 
-              if (featMeeples.length > 0) {
-                  let touchingCities = new Set();
-                  featTiles.forEach(fCoord => {
-                      const fTile = b[fCoord]; const fTileDef = CARCASSONNE_TILES[fTile.type];
-                      let touches = true;
-                      if (fTileDef.id === 'starter' || fTileDef.id.startsWith('C1_R_straight')) touches = false;
-                      
-                      if (touches) {
-                          for (let cEdge = 0; cEdge < 4; cEdge++) {
-                              let cOrig = (cEdge - fTile.rotation + 4) % 4;
-                              if (fTileDef.edges[cOrig] === 'C') {
-                                  let cityDFS = runDFS(b, fCoord, cEdge, 'C');
-                                  if (cityDFS.isComplete) touchingCities.add(Array.from(cityDFS.traversedEdges).sort().join('|'));
-                              }
-                          }
-                      }
-                  });
+                if (featMeeples.length > 0) {
+                    let touchingCities = new Set();
+                    featTiles.forEach(fCoord => {
+                        const fTile = b[fCoord]; const fTileDef = CARCASSONNE_TILES[fTile.type];
+                        let touches = true;
+                        if (fTileDef.id === 'starter' || fTileDef.id.startsWith('C1_R_straight')) touches = false;
+                        
+                        if (touches) {
+                            for (let cEdge = 0; cEdge < 4; cEdge++) {
+                                let cOrig = (cEdge - fTile.rotation + 4) % 4;
+                                if (fTileDef.edges[cOrig] === 'C') {
+                                    let cityDFS = runDFS(b, fCoord, cEdge, 'C');
+                                    if (cityDFS.isComplete) touchingCities.add(Array.from(cityDFS.traversedEdges).sort().join('|'));
+                                }
+                            }
+                        }
+                    });
 
-                  const points = touchingCities.size * 3; 
-                  let counts = {};
-                  featMeeples.forEach(m => { counts[m.player] = (counts[m.player] || 0) + 1; });
-                  let maxMeeples = Math.max(...Object.values(counts));
-                  let winners = Object.keys(counts).filter(id => counts[id] === maxMeeples);
+                    const points = touchingCities.size * 3; 
+                    let counts = {};
+                    featMeeples.forEach(m => { counts[m.player] = (counts[m.player] || 0) + 1; });
+                    let maxMeeples = Math.max(...Object.values(counts));
+                    let winners = Object.keys(counts).filter(id => counts[id] === maxMeeples);
 
-                  winners.forEach(wId => {
-                      const pIdx = p.findIndex(pl => pl.id === wId);
-                      if (pIdx !== -1) p[pIdx].score += points;
-                  });
+                    winners.forEach(wId => {
+                        const pIdx = p.findIndex(pl => pl.id === wId);
+                        if (pIdx !== -1) p[pIdx].score += points;
+                    });
 
-                  featMeeples.forEach(m => {
-                      const mTile = b[m.coord];
-                      const mIdx = mTile.meeples.findIndex(x => x.player === m.player && x.isFarmer);
-                      if (mIdx !== -1) mTile.meeples.splice(mIdx, 1);
-                  });
-              }
-          }
-      }
-  }
+                    featMeeples.forEach(m => {
+                        const mTile = b[m.coord];
+                        const mIdx = mTile.meeples.findIndex(x => x.player === m.player && x.isFarmer);
+                        if (mIdx !== -1) mTile.meeples.splice(mIdx, 1);
+                    });
+                }
+            }
+        }
+    }
 
-  p.sort((a, b) => b.score - a.score);
-  return { finalBoard: b, finalPlayers: p };
+    p.sort((a, b) => b.score - a.score);
+    return { finalBoard: b, finalPlayers: p };
 };
