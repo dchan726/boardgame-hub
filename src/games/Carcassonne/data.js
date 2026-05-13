@@ -37,6 +37,21 @@ export const getRotatedEdges = (edges, rotation) => {
   return newEdges;
 };
 
+// ★ 新增：補回 generateDeck 並匯出
+export const generateDeck = () => {
+  let deck = [];
+  for (const [key, tile] of Object.entries(CARCASSONNE_TILES)) {
+    if (key === 'starter') continue;
+    for (let i = 0; i < tile.count; i++) deck.push({ id: `${key}_${i}`, type: key });
+  }
+  // 隨機洗牌 (Fisher-Yates Shuffle)
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+};
+
 export const runDFS = (boardData, startCoord, startEdge, featType) => {
     let queue = [{ coord: startCoord, edge: startEdge }];
     let visitedEdges = new Set(); let featTiles = new Set(); let featMeeples = []; let isComplete = true;
