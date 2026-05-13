@@ -267,54 +267,17 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
   };
 
   const renderTileSVG = (type, rotation, isGhost = false) => {
-    const tileDef = CARCASSONNE_TILES[type];
     const rotDeg = rotation * 90;
 
-    const cGrass = '#a7c97e', cGrassDark = '#8aab69';
-    const cRoadEdge = '#b5ad9e', cRoadCenter = '#ebe6de';
-    const cCityBase = '#e2cda3', cCityWall = '#8b6045';
-
-    const renderCityGroup = (group, hasShield) => {
-        let pathD = ""; let shieldPos = {x: 50, y: 50}; let gRot = 0;
-        if (group.length === 1) { gRot = group[0] * 90; pathD = "M 0 0 L 100 0 L 85 30 C 65 40, 35 40, 15 30 Z"; shieldPos = {x: 50, y: 20}; } 
-        else if (group.length === 2) {
-            if (Math.abs(group[0] - group[1]) === 2) { gRot = group[0] * 90; pathD = "M 0 0 L 100 0 L 100 20 L 0 20 Z M 0 100 L 100 100 L 100 80 L 0 80 Z"; } 
-            else { let is03 = (group.includes(0) && group.includes(3)); gRot = is03 ? 270 : Math.min(group[0], group[1]) * 90; pathD = "M 0 0 L 100 0 L 100 100 C 50 100, 0 50, 0 0 Z"; shieldPos = {x: 65, y: 35}; }
-        } 
-        else if (group.length === 3) { let missing = [0,1,2,3].find(e => !group.includes(e)); gRot = ((missing + 2) % 4) * 90; pathD = "M 0 100 L 0 0 L 100 0 L 100 100 C 75 65, 25 65, 0 100 Z"; shieldPos = {x: 50, y: 35}; } 
-        else if (group.length === 4) { pathD = "M 0 0 L 100 0 L 100 100 L 0 100 Z"; }
-
-        return (
-            <g transform={`rotate(${gRot} 50 50)`}>
-                <path d={pathD} fill={cCityBase} stroke={cCityWall} strokeWidth="4" strokeLinejoin="round" />
-                {hasShield && (
-                    <g transform={`translate(${shieldPos.x - 10}, ${shieldPos.y - 12}) scale(0.6)`}>
-                        <path d="M 0 0 L 30 0 L 30 20 C 30 35, 15 45, 15 45 C 15 45, 0 35, 0 20 Z" fill="#2563eb" stroke="#fff" strokeWidth="4"/>
-                        <path d="M 5 5 L 25 5 L 25 15 C 25 25, 15 35, 15 35 C 15 35, 5 25, 5 15 Z" fill="#93c5fd" />
-                    </g>
-                )}
-            </g>
-        );
-    };
-
-    const renderRoadGroup = (group) => {
-        let gRot = 0; let pathOut = "";
-        if (group.length === 2) {
-            if (Math.abs(group[0] - group[1]) === 2) { gRot = group[0] * 90; pathOut = "M 50 0 L 50 100"; } 
-            else { let is03 = (group.includes(0) && group.includes(3)); gRot = is03 ? 270 : Math.min(group[0], group[1]) * 90; pathOut = "M 50 0 Q 50 50 100 50"; }
-        } else if (group.length === 1) { gRot = group[0] * 90; pathOut = "M 50 0 L 50 50"; }
-        return (
-            <g transform={`rotate(${gRot} 50 50)`}>
-                <path d={pathOut} fill="none" stroke={cRoadEdge} strokeWidth="20" strokeLinecap="butt" />
-                <path d={pathOut} fill="none" stroke={cRoadCenter} strokeWidth="14" strokeLinecap="butt" />
-            </g>
-        );
-    };
-
     return (
-<<<<<<< HEAD
-      <div className={`relative w-full h-full ${isGhost ? 'opacity-60' : ''} bg-stone-200 border border-stone-800 rounded-lg overflow-hidden`}>
-        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-stone-700">{type.toUpperCase()}</div>
+      <div
+        className={`relative w-full h-full overflow-hidden rounded-3xl border ${isGhost ? 'border-blue-300 bg-blue-100/30 opacity-75' : 'border-stone-300 bg-stone-100'} shadow-inner`}
+        style={{ transform: `rotate(${rotDeg}deg)` }}
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.45),_transparent_45%)] pointer-events-none" />
+        <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-stone-700 uppercase tracking-[0.2em]">
+          {type}
+        </div>
       </div>
     );
   };
@@ -323,11 +286,6 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
       <div className="relative w-full h-[100dvh] overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
       <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
 
-=======
-      <div className="relative w-full h-[100dvh] overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
-      <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
-
->>>>>>> 060ff2a74b32d7b4d1b963c88cf4229df70a132f
       {showRulesModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
           <div className="bg-white max-w-xl w-full h-[80vh] md:h-auto md:max-h-[85vh] rounded-[2rem] shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden">
