@@ -312,6 +312,7 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
     };
 
     return (
+<<<<<<< HEAD
       <div className={`relative w-full h-full ${isGhost ? 'opacity-60' : ''} bg-stone-200 border border-stone-800 rounded-lg overflow-hidden`}>
         <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-stone-700">{type.toUpperCase()}</div>
       </div>
@@ -322,6 +323,11 @@ export default function CarcassonneEngine({ roomId, roomData, userId }) {
       <div className="relative w-full h-[100dvh] overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
       <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
 
+=======
+      <div className="relative w-full h-[100dvh] overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] bg-[#9c7b5a] flex flex-col shadow-inner select-none touch-none">
+      <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+
+>>>>>>> 060ff2a74b32d7b4d1b963c88cf4229df70a132f
       {showRulesModal && (
         <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.2s_ease-out]">
           <div className="bg-white max-w-xl w-full h-[80vh] md:h-auto md:max-h-[85vh] rounded-[2rem] shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden">
